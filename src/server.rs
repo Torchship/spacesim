@@ -43,7 +43,7 @@ async fn handle_client(stream: TcpStream, registry: Arc<CommandRegistry>) -> Res
     Ok(())
 }
 
-pub async fn run_server(config: Config, registry: Arc<CommandRegistry>) {
+pub async fn start_server(config: Config, registry: Arc<CommandRegistry>) {
     let address = format!("{}:{}", config.server.address, config.server.port);
     let listener = TcpListener::bind(&address).await.unwrap();
 

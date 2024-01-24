@@ -1,3 +1,5 @@
+use std::u16;
+
 use serde_derive::{Deserialize, Serialize};
 
 use crate::provider::Provider;
@@ -51,5 +53,36 @@ pub trait BodyProviderExt {
 impl BodyProviderExt for Provider<Body> {
     fn add_body(&mut self, body: Body) {
         self.items.push(body);
+    }
+}
+
+pub trait PhysicsSimulation {
+    // Method to be called on each update cycle
+    fn update(&mut self);
+
+    // Method to start the simulation
+    fn start_simulation(&mut self, tick_rate: u64) {
+        loop {
+            self.update();
+            std::thread::sleep(std::time::Duration::from_millis(1000 / tick_rate));
+        }
+    }
+}
+
+pub struct SpaceSimulation {
+    // Simulation state fields
+}
+
+impl SpaceSimulation {
+    pub fn new() -> Self {
+        SpaceSimulation {
+            // Initialize fields
+        }
+    }
+}
+
+impl PhysicsSimulation for SpaceSimulation {
+    fn update(&mut self) {
+        // Update simulation state
     }
 }

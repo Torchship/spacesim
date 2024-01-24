@@ -6,12 +6,12 @@ mod simulation;
 mod provider;
 
 use crate::config::Config;
-use crate::server::run_server;
-use crate::provider::Provider;
+use crate::server::start_server;
 use std::fs;
 use command::{CommandRegistry, Command, HelloMessage};
 use std::sync::Arc;
-use simulation::{Body};
+use simulation::{SpaceSimulation, PhysicsSimulation};
+use tokio::task::JoinHandle;
 
 #[macro_export]
 macro_rules! register_commands {
@@ -28,21 +28,39 @@ async fn main() {
     logger::init(); // Initialize the logger
     let config_contents = fs::read_to_string("config.yaml").expect("Failed to read config file");
     let config: Config = serde_yaml::from_str(&config_contents).expect("Failed to parse config file");
+        
+    let server_handle = run_server(config);
+    let simulation_handle = run_simulation();
 
-    let mut registry = CommandRegistry::new();
-    register_commands!(registry,
+    server_handle.await.unwrap();
+    simulation_handle.await.unwrap();
+}
+
+fn run_server(config: Config) -> JoinHandle<()> {
+    let mut command_registry = CommandRegistry::new();
+    register_commands!(command_registry,
         1 => HelloMessage
         // Add more commands here
     );
-    
-    let body_provider = Provider::<Body>::new();
-    body_provider.load();
-    // body_provider.add_body(Body {
-    //     position: Vec2 { x: 0.0, y: 0.0 },
-    //     velocity: Vec2 { x: 1.0, y: 1.0 },
-    //     mass: 5.0,
-    // });
+    let command_registry = Arc::new(command_registry);
 
-    let arc_registry = Arc::new(registry);
-    run_server(config, arc_registry).await;
+    return tokio::spawn(async {
+        start_server(config, command_registry).await;
+    });
+}
+
+fn run_simulation() -> JoinHandle<()> {
+    return tokio::spawn(async {
+        let mut simulation = SpaceSimulation::new();
+
+        // let body_provider = Provider::<Body>::new();
+        // body_provider.load();
+        // body_provider.add_body(Body {
+        //     position: Vec2 { x: 0.0, y: 0.0 },
+        //     velocity: Vec2 { x: 1.0, y: 1.0 },
+        //     mass: 5.0,
+        // });
+
+        simulation.start_simulation(30);
+    });
 }
