@@ -1,5 +1,30 @@
 use serde::{Deserialize, Serialize};
 use serde_json;
+use std::collections::HashMap;
+
+pub struct CommandRegistry {
+    commands: HashMap<u16, fn(&str) -> Box<dyn Command>>,
+}
+
+impl CommandRegistry {
+    pub fn new() -> CommandRegistry {
+        CommandRegistry {
+            commands: HashMap::new(),
+        }
+    }
+
+    pub fn register(&mut self, id: u16, command: fn(&str) -> Box<dyn Command>) {
+        self.commands.insert(id, command);
+    }
+
+    pub fn create_command(&self, id: u16, data: &str) -> Result<Box<dyn Command>, &'static str> {
+        if let Some(&constructor) = self.commands.get(&id) {
+            Ok(constructor(data))
+        } else {
+            Err("Unknown command")
+        }
+    }
+}
 
 #[derive(Deserialize)]
 pub struct HelloMessage {
@@ -11,7 +36,7 @@ struct AckMessage {
     ack: bool,
 }
 
-pub trait Command {
+pub trait Command: Send  {
     fn execute(&self) -> String;
 }
 
