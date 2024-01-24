@@ -2,12 +2,16 @@ mod config;
 mod command;
 mod server;
 mod logger;
+mod simulation;
+mod provider;
 
 use crate::config::Config;
 use crate::server::run_server;
+use crate::provider::Provider;
 use std::fs;
 use command::{CommandRegistry, Command, HelloMessage};
 use std::sync::Arc;
+use simulation::{Body};
 
 #[macro_export]
 macro_rules! register_commands {
@@ -30,6 +34,14 @@ async fn main() {
         1 => HelloMessage
         // Add more commands here
     );
+    
+    let body_provider = Provider::<Body>::new();
+    body_provider.load();
+    // body_provider.add_body(Body {
+    //     position: Vec2 { x: 0.0, y: 0.0 },
+    //     velocity: Vec2 { x: 1.0, y: 1.0 },
+    //     mass: 5.0,
+    // });
 
     let arc_registry = Arc::new(registry);
     run_server(config, arc_registry).await;
